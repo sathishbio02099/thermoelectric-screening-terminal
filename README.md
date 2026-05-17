@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/27900958/README.md)
 # Thermoelectric Screening Terminal
 
 A Streamlit interface around a Materials-Project + Random-Forest pipeline that ranks crystalline materials by a **heuristic ZT proxy**. This is a discovery-stage funnel, not a true ZT predictor.
