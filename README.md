@@ -1,23 +1,46 @@
-# Thermoelectric Screening Terminal
+# Thermoelectric Screening Terminal — v2 (manuscript-aligned)
 
-A Streamlit interface around a Materials-Project + Random-Forest pipeline that ranks crystalline materials by a **heuristic ZT proxy**. This is a discovery-stage funnel, not a true ZT predictor.
+Companion Streamlit interface for:
+
+> Selvam *et al.*, "From Prediction to Physics: A Robust Machine Learning Framework for Thermoelectric Discovery with Explicit First-Principles Validation," submitted to *J. Mater. Chem. A*.
+
+This v2 release replaces the original UI and is aligned exactly with `MLcode_v2.py` and the manuscript text.
 
 ---
 
-## What it does
+## What's new vs. v1
 
-1. **Pulls** stable, narrow-gap crystals from the Materials Project (configurable filters: band gap, energy above hull, sites per cell).
-2. **Featurizes** with matminer's Magpie elemental descriptors (~132 features).
-3. **Scores** each material with a chemistry-aware surrogate target: `ZT_proxy = E_g · |Δh_f| / ρ`.
-4. **Trains** a Random Forest on `log1p(ZT_proxy)` across N random seeds (default 20) to assess ranking stability.
-5. **Ranks** candidates by how often they appear in the top-K across seeds.
-6. **Explains** the model with tree-SHAP attribution.
+| Capability | v1 | v2 |
+| --- | --- | --- |
+| Stability sweep seeds | 20 random | **20 fixed seeds from the manuscript** |
+| Models | Random Forest only | **Random Forest + XGBoost comparison arm** |
+| Metrics | R², MAE | **R², MAE, RMSE** |
+| Cross-validation | none | **Repeated 5-fold × 3** |
+| Diagnostic plots | none | **Parity, residuals, correlation matrix, CV chart** |
+| SHAP | summary only | **bar + heatmap + beeswarm summary** |
+| Stability threshold | 0.8 | **0.9** (matches §2.1.7) |
+| Final candidate filter | — | **band gap ≥ 0.2 added** (matches §2.1.7) |
+| Manuscript section cross-references | — | **Visible throughout the UI** |
 
-## What it is *not*
+---
 
-This tool does **not** predict the real thermoelectric figure of merit ZT = S²σT/κ. The proxy is a screening prior — it favors narrow-gap, strongly-bonded, low-density crystals because those are reasonable thermoelectric priors. It does not encode Seebeck coefficient, electronic conductivity, or lattice thermal conductivity. Anything you ship from this tool needs proper BoltzTraP/AMSET/Phono3py follow-up.
+## What the pipeline does
 
-The UI repeats this warning everywhere it matters. Please keep that framing when sharing results.
+The full workflow from Section 2.1 of the manuscript:
+
+1. **Pull** stable narrow-gap crystals from Materials Project (band gap 0.1–2.0 eV, E_hull ≤ 0.03 eV/atom, 2–100 sites/cell)
+2. **Score** with the heuristic ZT proxy: `ZT_proxy = E_g · |ΔH_f| / (ρ + ε)`, ε = 10⁻⁶
+3. **Featurize** with matminer's Magpie elemental descriptors (~132 features)
+4. **Pipeline**: median imputation → SelectKBest (F-test, k=50) → Random Forest / XGBoost
+5. **Validate**: 80:20 holdout + repeated 5-fold CV (3 repeats)
+6. **Stabilize**: 20-seed sweep with the manuscript's fixed seed list
+7. **Compare**: RF vs XGBoost under identical preprocessing
+8. **Explain**: SHAP tree-explainer with bar, heatmap, and beeswarm
+9. **Select**: stability ≥ 0.9, E_hull ≤ 0.03, band gap ≥ 0.2
+
+## What the pipeline is *not*
+
+The ZT proxy is a **heuristic screening descriptor**, not the true thermoelectric figure of merit ZT = S²σT/κ. It does not encode Seebeck coefficient, electrical conductivity, or lattice thermal conductivity. Use rankings to shortlist candidates for proper BoltzTraP / AMSET / Phono3py follow-up. The UI repeats this warning everywhere it matters.
 
 ---
 
@@ -39,7 +62,11 @@ Open the URL Streamlit prints (default `http://localhost:8501`). You'll need a f
 3. Set the main file to `app.py`.
 4. Deploy. Streamlit Cloud auto-installs from `requirements.txt`.
 
-For Hugging Face Spaces, Render, or Fly: any Python platform that runs `streamlit run app.py` with `requirements.txt` works. The Materials Project API key is entered at runtime by the user — no need to put it in env vars.
+If the build fails on Python version mismatch with pymatgen, add a `runtime.txt` at the repo root containing just:
+
+```
+python-3.11
+```
 
 ---
 
@@ -47,18 +74,16 @@ For Hugging Face Spaces, Render, or Fly: any Python platform that runs `streamli
 
 | File | Purpose |
 | --- | --- |
-| `app.py` | Streamlit UI + refactored pipeline with caching |
-| `requirements.txt` | Pinned Python dependencies |
+| `app.py` | Streamlit UI + manuscript-aligned pipeline |
+| `requirements.txt` | Pinned Python dependencies including XGBoost |
 | `.streamlit/config.toml` | Dark theme + server config |
 | `README.md` | This file |
+| `LICENSE` | MIT |
 
-## Pipeline notes vs. original `MLcode.py`
+## Companion script
 
-- Same proxy formula, same RF + SelectKBest + Magpie features, same N-seed stability sweep.
-- Adds prediction-level stability tracking (mean/std of predicted score per material across seeds).
-- Uses `@st.cache_data` to avoid re-pulling MP and re-featurizing on every interaction.
-- SHAP is on-demand (button) rather than always-run, to keep the page responsive.
+The standalone Python pipeline that this UI wraps is `MLcode_v2.py` — same formula, same seeds, same models, same metrics. Reviewers can run either; they produce equivalent results.
 
 ## License
 
-Use at your own risk. The proxy is a heuristic. Don't publish ZT claims from this tool without proper transport calculations.
+MIT. The ZT proxy is a heuristic. Don't publish ZT claims from this tool without proper transport calculations.
