@@ -12,3 +12,4 @@ env/
 *.csv
 shap_summary.png
 .ipynb_checkpoints/
+figures/

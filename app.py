@@ -183,8 +183,24 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 # ============================================================================
 @st.cache_resource
 def load_artifacts():
-    """Load the three pre-trained artifacts from the repo."""
-    pipeline = joblib.load("trained_pipeline.pkl")
+    """Load the three pre-trained artifacts. Pipeline downloads from Google Drive."""
+    import requests
+    from pathlib import Path
+    
+    # Download pipeline from Google Drive if not already cached locally
+    pipeline_path = "trained_pipeline.pkl"
+    if not Path(pipeline_path).exists():
+        file_id = "1y35B9N8yLkRjX1IIE3-Z7cnGdhJFFG-h"
+        url = f"https://drive.google.com/uc?id={file_id}&export=download&confirm=t"
+        
+        with st.spinner("Downloading trained model from Google Drive (first load only, ~142 MB)..."):
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            with open(pipeline_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+    
+    pipeline = joblib.load(pipeline_path)
     dataset = pd.read_csv("dataset_ranked.csv")
     stability = pd.read_csv("stability_rankings.csv")
     return pipeline, dataset, stability
