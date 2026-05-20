@@ -187,7 +187,7 @@ def load_artifacts():
     from huggingface_hub import hf_hub_download
     
     # Download from Hugging Face Hub (free, no size limits, reliable)
-    repo_id = "YOUR_USERNAME/thermoelectric-rf-model"  # ← REPLACE WITH YOUR HUGGING FACE USERNAME
+    repo_id = "sathishbio2/thermoelectric-rf-model"  # ← REPLACE WITH YOUR HUGGING FACE USERNAME
     
     try:
         with st.spinner("Downloading trained model from Hugging Face (first load only, ~142 MB)..."):
