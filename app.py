@@ -229,13 +229,23 @@ def parse_cif_to_formula(cif_bytes: bytes) -> str:
 
 
 def featurize_single(formula: str) -> pd.DataFrame:
+    """Featurize a single composition with Magpie descriptors."""
     from pymatgen.core import Composition
     from matminer.featurizers.composition import ElementProperty
+    import gc  # ← ADD THIS
+    
     comp = Composition(formula)
     feat = ElementProperty.from_preset("magpie")
-    df_in = pd.DataFrame([{"composition": comp}])
+    row = {"composition": comp}
+    df_in = pd.DataFrame([row])
     df_out = feat.featurize_dataframe(df_in, col_id="composition", ignore_errors=True)
-    return df_out.drop(columns=["composition"])
+    result = df_out.drop(columns=["composition"])
+    
+    # Clean up ← ADD THIS
+    del df_in, df_out, comp
+    gc.collect()
+    
+    return result
 
 
 def predict_material(formula, bg, fe, rho, epsilon, pipeline, all_preds):
