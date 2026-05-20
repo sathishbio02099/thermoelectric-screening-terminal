@@ -241,6 +241,7 @@ def featurize_single(formula: str) -> pd.DataFrame:
 def predict_material(formula, bg, fe, rho, epsilon, pipeline, all_preds):
     """Predict ZT proxy for a single material."""
     from pymatgen.core import Composition
+    import gc  # ← ADD THIS
     
     zt_proxy = (bg * abs(fe)) / (rho + epsilon)
     
@@ -251,16 +252,11 @@ def predict_material(formula, bg, fe, rho, epsilon, pipeline, all_preds):
     X_new['energy_above_hull'] = 0.0
     X_new['n_elements'] = len(Composition(formula).elements)
     
-    # Get the feature names the model was trained on from the pipeline
-    # The model's feature selector knows the correct order
+    # Get feature names from pipeline and reorder
     try:
-        # Get feature names from the training data (from the dataset CSV)
         expected_features = pipeline.feature_names_in_
-        # Reorder X_new to match
         X_new = X_new[expected_features]
     except AttributeError:
-        # If feature_names_in_ doesn't exist, just ensure column order matches
-        # by sorting column names (consistent with training)
         X_new = X_new.reindex(sorted(X_new.columns), axis=1)
     
     # Predict
@@ -269,12 +265,18 @@ def predict_material(formula, bg, fe, rho, epsilon, pipeline, all_preds):
     # Calculate percentile
     pct = (all_preds < y_pred_log).sum() / len(all_preds) * 100
     
-    return {
+    result = {
         "formula": formula,
         "ZT_proxy": zt_proxy,
         "predicted_log": float(y_pred_log),
         "percentile": float(pct),
     }
+    
+    # Clean up memory ← ADD THIS
+    del X_new
+    gc.collect()
+    
+    return result
 
 
 # ============================================================================
