@@ -183,68 +183,35 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 # ============================================================================
 @st.cache_resource
 def load_artifacts():
-    """Load the three pre-trained artifacts. Pipeline downloads from Google Drive."""
-    from pathlib import Path
-    import requests
+    """Load the three pre-trained artifacts from Hugging Face Hub."""
+    from huggingface_hub import hf_hub_download
     
-    # Download pipeline from Google Drive if not already cached locally
-    pipeline_path = "trained_pipeline.pkl"
-    if not Path(pipeline_path).exists():
-        file_id = "1Nq-ZLF1bCEmOnxegQPfxxUgyZnUYZ4hA"
-        
-        def download_file_from_google_drive(id, destination):
-            """Download large files from Google Drive with confirmation token handling."""
-            URL = "https://docs.google.com/uc?export=download"
-            
-            session = requests.Session()
-            response = session.get(URL, params={'id': id, 'confirm': 1}, stream=True)
-            
-            # Get the confirmation token if present
-            token = None
-            for key, value in response.cookies.items():
-                if key.startswith('download_warning'):
-                    token = value
-                    break
-            
-            if token:
-                params = {'id': id, 'confirm': token}
-                response = session.get(URL, params=params, stream=True)
-            
-            # Check if we got HTML error page instead of file
-            if 'text/html' in response.headers.get('content-type', ''):
-                raise Exception(
-                    "Google Drive returned an error page. "
-                    "Please check that the file is publicly shared."
-                )
-            
-            # Save file in chunks
-            CHUNK_SIZE = 32768
-            with open(destination, "wb") as f:
-                for chunk in response.iter_content(CHUNK_SIZE):
-                    if chunk:
-                        f.write(chunk)
-        
-        with st.spinner("Downloading trained model from Google Drive (first load only, ~142 MB)..."):
-            try:
-                download_file_from_google_drive(file_id, pipeline_path)
-            except Exception as e:
-                st.error(
-                    f"**Failed to download model from Google Drive.**\n\n"
-                    f"Error: {e}\n\n"
-                    f"**Troubleshooting:**\n"
-                    f"1. Check the file is publicly shared: "
-                    f"https://drive.google.com/file/d/{file_id}/view\n"
-                    f"2. Set sharing to 'Anyone with the link can view'\n"
-                    f"3. If the issue persists, the file may be too large for "
-                    f"automatic download. Consider using Git LFS instead.\n\n"
-                    f"Alternative: Download the file manually and upload all 3 artifacts to GitHub using Git LFS."
-                )
-                st.stop()
+    # Download from Hugging Face Hub (free, no size limits, reliable)
+    repo_id = "YOUR_USERNAME/thermoelectric-rf-model"  # ← REPLACE WITH YOUR HUGGING FACE USERNAME
     
-    pipeline = joblib.load(pipeline_path)
-    dataset = pd.read_csv("dataset_ranked.csv")
-    stability = pd.read_csv("stability_rankings.csv")
-    return pipeline, dataset, stability
+    try:
+        with st.spinner("Downloading trained model from Hugging Face (first load only, ~142 MB)..."):
+            pipeline_path = hf_hub_download(repo_id, "trained_pipeline.pkl")
+            dataset_path = hf_hub_download(repo_id, "dataset_ranked.csv")
+            stability_path = hf_hub_download(repo_id, "stability_rankings.csv")
+        
+        pipeline = joblib.load(pipeline_path)
+        dataset = pd.read_csv(dataset_path)
+        stability = pd.read_csv(stability_path)
+        return pipeline, dataset, stability
+        
+    except Exception as e:
+        st.error(
+            f"**Failed to load model from Hugging Face.**\n\n"
+            f"Error: {e}\n\n"
+            f"**Setup instructions:**\n"
+            f"1. Create a free account at https://huggingface.co/\n"
+            f"2. Create a new model repo (e.g., 'yourname/thermoelectric-rf-model')\n"
+            f"3. Upload the 3 artifact files to that repo\n"
+            f"4. Update line with your repo name: repo_id = 'yourname/thermoelectric-rf-model'\n"
+            f"5. Redeploy"
+        )
+        st.stop()
 
 
 # ============================================================================
