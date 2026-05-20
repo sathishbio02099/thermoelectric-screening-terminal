@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 THERMOELECTRIC SCREENING TERMINAL v3.0 (artifact-based deployment)
 
@@ -12,8 +14,6 @@ NO training happens on Streamlit Cloud. The app just:
 
 This solves all RAM issues and gives instant load times.
 """
-
-from __future__ import annotations
 
 import io
 import warnings
