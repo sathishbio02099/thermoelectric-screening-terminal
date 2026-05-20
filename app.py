@@ -184,21 +184,27 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 @st.cache_resource
 def load_artifacts():
     """Load the three pre-trained artifacts. Pipeline downloads from Google Drive."""
-    import requests
     from pathlib import Path
+    import gdown
     
     # Download pipeline from Google Drive if not already cached locally
     pipeline_path = "trained_pipeline.pkl"
     if not Path(pipeline_path).exists():
         file_id = "1y35B9N8yLkRjX1IIE3-Z7cnGdhJFFG-h"
-        url = f"https://drive.google.com/uc?id={file_id}&export=download&confirm=t"
+        url = f"https://drive.google.com/uc?id={file_id}"
         
         with st.spinner("Downloading trained model from Google Drive (first load only, ~142 MB)..."):
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-            with open(pipeline_path, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
+            try:
+                gdown.download(url, pipeline_path, quiet=False)
+            except Exception as e:
+                st.error(
+                    f"**Failed to download model from Google Drive.**\n\n"
+                    f"Error: {e}\n\n"
+                    f"Please check that the Google Drive file is publicly accessible:\n"
+                    f"https://drive.google.com/file/d/{file_id}/view\n\n"
+                    f"The file should be set to 'Anyone with the link can view'."
+                )
+                st.stop()
     
     pipeline = joblib.load(pipeline_path)
     dataset = pd.read_csv("dataset_ranked.csv")
