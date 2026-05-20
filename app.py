@@ -185,24 +185,59 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 def load_artifacts():
     """Load the three pre-trained artifacts. Pipeline downloads from Google Drive."""
     from pathlib import Path
-    import gdown
+    import requests
     
     # Download pipeline from Google Drive if not already cached locally
     pipeline_path = "trained_pipeline.pkl"
     if not Path(pipeline_path).exists():
-        file_id = "1y35B9N8yLkRjX1IIE3-Z7cnGdhJFFG-h"
-        url = f"https://drive.google.com/uc?id={file_id}"
+        file_id = "1Nq-ZLF1bCEmOnxegQPfxxUgyZnUYZ4hA"
+        
+        def download_file_from_google_drive(id, destination):
+            """Download large files from Google Drive with confirmation token handling."""
+            URL = "https://docs.google.com/uc?export=download"
+            
+            session = requests.Session()
+            response = session.get(URL, params={'id': id, 'confirm': 1}, stream=True)
+            
+            # Get the confirmation token if present
+            token = None
+            for key, value in response.cookies.items():
+                if key.startswith('download_warning'):
+                    token = value
+                    break
+            
+            if token:
+                params = {'id': id, 'confirm': token}
+                response = session.get(URL, params=params, stream=True)
+            
+            # Check if we got HTML error page instead of file
+            if 'text/html' in response.headers.get('content-type', ''):
+                raise Exception(
+                    "Google Drive returned an error page. "
+                    "Please check that the file is publicly shared."
+                )
+            
+            # Save file in chunks
+            CHUNK_SIZE = 32768
+            with open(destination, "wb") as f:
+                for chunk in response.iter_content(CHUNK_SIZE):
+                    if chunk:
+                        f.write(chunk)
         
         with st.spinner("Downloading trained model from Google Drive (first load only, ~142 MB)..."):
             try:
-                gdown.download(url, pipeline_path, quiet=False)
+                download_file_from_google_drive(file_id, pipeline_path)
             except Exception as e:
                 st.error(
                     f"**Failed to download model from Google Drive.**\n\n"
                     f"Error: {e}\n\n"
-                    f"Please check that the Google Drive file is publicly accessible:\n"
-                    f"https://drive.google.com/file/d/{file_id}/view\n\n"
-                    f"The file should be set to 'Anyone with the link can view'."
+                    f"**Troubleshooting:**\n"
+                    f"1. Check the file is publicly shared: "
+                    f"https://drive.google.com/file/d/{file_id}/view\n"
+                    f"2. Set sharing to 'Anyone with the link can view'\n"
+                    f"3. If the issue persists, the file may be too large for "
+                    f"automatic download. Consider using Git LFS instead.\n\n"
+                    f"Alternative: Download the file manually and upload all 3 artifacts to GitHub using Git LFS."
                 )
                 st.stop()
     
