@@ -1,6 +1,6 @@
 # Thermoelectric Screening Terminal v3.0 (artifact-based deployment)
 
-**ZERO RAM ISSUES. INSTANT LOAD. FULL 70K MANUSCRIPT RUN.**
+**ZERO RAM ISSUES. INSTANT LOAD. FULL 70K DATASET RUN.**
 
 This version loads pre-trained artifacts instead of training on Streamlit Cloud.
 
