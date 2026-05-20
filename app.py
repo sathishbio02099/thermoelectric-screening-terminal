@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 THERMOELECTRIC SCREENING TERMINAL v3.0 (artifact-based deployment)
 
@@ -24,6 +25,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 import joblib
+
+from pymatgen.core import Composition
 
 warnings.filterwarnings("ignore")
 
