@@ -12,7 +12,7 @@ NO training happens on Streamlit Cloud. The app just:
 
 This solves all RAM issues and gives instant load times.
 """
-
+from pymatgen.core import Composition
 from __future__ import annotations
 
 import io
@@ -239,10 +239,23 @@ def featurize_single(formula: str) -> pd.DataFrame:
 
 
 def predict_material(formula, bg, fe, rho, epsilon, pipeline, all_preds):
+    """Predict ZT proxy for a single material."""
     zt_proxy = (bg * abs(fe)) / (rho + epsilon)
+    
+    # Featurize the composition
     X_new = featurize_single(formula)
+    
+    # Add the missing columns that the model expects
+    # (these were in the training data but not from single-composition featurization)
+    X_new['energy_above_hull'] = 0.0  # Dummy value (not used by model after feature selection)
+    X_new['n_elements'] = len(Composition(formula).elements)
+    
+    # Predict
     y_pred_log = pipeline.predict(X_new)[0]
+    
+    # Calculate percentile
     pct = (all_preds < y_pred_log).sum() / len(all_preds) * 100
+    
     return {
         "formula": formula,
         "ZT_proxy": zt_proxy,
