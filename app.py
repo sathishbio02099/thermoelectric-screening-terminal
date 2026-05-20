@@ -240,14 +240,15 @@ def featurize_single(formula: str) -> pd.DataFrame:
 
 def predict_material(formula, bg, fe, rho, epsilon, pipeline, all_preds):
     """Predict ZT proxy for a single material."""
+    from pymatgen.core import Composition  # ← ADD THIS LINE
+    
     zt_proxy = (bg * abs(fe)) / (rho + epsilon)
     
     # Featurize the composition
     X_new = featurize_single(formula)
     
     # Add the missing columns that the model expects
-    # (these were in the training data but not from single-composition featurization)
-    X_new['energy_above_hull'] = 0.0  # Dummy value (not used by model after feature selection)
+    X_new['energy_above_hull'] = 0.0
     X_new['n_elements'] = len(Composition(formula).elements)
     
     # Predict
