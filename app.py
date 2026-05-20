@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 THERMOELECTRIC SCREENING TERMINAL v3.0 (artifact-based deployment)
 
@@ -12,8 +13,6 @@ NO training happens on Streamlit Cloud. The app just:
 
 This solves all RAM issues and gives instant load times.
 """
-from pymatgen.core import Composition
-from __future__ import annotations
 
 import io
 import warnings
@@ -25,7 +24,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 import joblib
-
+from pymatgen.core import Composition
 warnings.filterwarnings("ignore")
 
 # ============================================================================
