@@ -190,7 +190,7 @@ def load_artifacts():
     # Download pipeline from Google Drive if not already cached locally
     pipeline_path = "trained_pipeline.pkl"
     if not Path(pipeline_path).exists():
-        file_id = "1y35B9N8yLkRjX1IIE3-Z7cnGdhJFFG-h"
+        file_id = "1Nq-ZLF1bCEmOnxegQPfxxUgyZnUYZ4hA"
         url = f"https://drive.google.com/uc?id={file_id}"
         
         with st.spinner("Downloading trained model from Google Drive (first load only, ~142 MB)..."):
